@@ -1,3 +1,50 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Custom Cursor */
+* {
+  cursor: none !important;
+}
+
+body {
+  cursor: none;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: var(--cursor-y, 0);
+  left: var(--cursor-x, 0);
+  width: 20px;
+  height: 20px;
+  background: linear-gradient(135deg, #dc2626, #ea580c);
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate(-50%, -50%);
+  transition: all 0.1s ease;
+  box-shadow: 
+    0 0 20px rgba(220, 38, 38, 0.6),
+    0 0 40px rgba(220, 38, 38, 0.3),
+    inset 0 0 10px rgba(255, 255, 255, 0.2);
+}
+
+/* Hover effect for interactive elements */
+a:hover, button:hover, input:hover, textarea:hover, select:hover {
+  transform: scale(1.05);
+  transition: transform 0.2s ease;
+}
+
+/* Larger cursor for interactive elements */
+body.cursor-hover::before {
+  width: 30px;
+  height: 30px;
+  background: linear-gradient(135deg, #dc2626, #ea580c, #f59e0b);
+  border: 3px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 
+    0 0 30px rgba(220, 38, 38, 0.8),
+    0 0 60px rgba(220, 38, 38, 0.4),
+    inset 0 0 15px rgba(255, 255, 255, 0.3);
+}

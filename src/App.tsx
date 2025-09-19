@@ -41,6 +41,7 @@ function App() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
 
   const roles = [
     'Full Stack Developer',
@@ -97,6 +98,44 @@ function App() {
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
   }, [theme]);
+
+  // Custom cursor effect
+  useEffect(() => {
+    const updateCursor = (e: MouseEvent) => {
+      setCursorPosition({ x: e.clientX, y: e.clientY });
+      
+      // Update cursor position
+      const cursor = document.querySelector('body::before') as HTMLElement;
+      document.documentElement.style.setProperty('--cursor-x', `${e.clientX}px`);
+      document.documentElement.style.setProperty('--cursor-y', `${e.clientY}px`);
+    };
+
+    const handleMouseEnter = () => {
+      document.body.classList.add('cursor-hover');
+    };
+
+    const handleMouseLeave = () => {
+      document.body.classList.remove('cursor-hover');
+    };
+
+    // Add cursor tracking
+    document.addEventListener('mousemove', updateCursor);
+    
+    // Add hover effects for interactive elements
+    const interactiveElements = document.querySelectorAll('a, button, input, textarea, select, [role="button"]');
+    interactiveElements.forEach(el => {
+      el.addEventListener('mouseenter', handleMouseEnter);
+      el.addEventListener('mouseleave', handleMouseLeave);
+    });
+
+    return () => {
+      document.removeEventListener('mousemove', updateCursor);
+      interactiveElements.forEach(el => {
+        el.removeEventListener('mouseenter', handleMouseEnter);
+        el.removeEventListener('mouseleave', handleMouseLeave);
+      });
+    };
+  }, []);
 
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
