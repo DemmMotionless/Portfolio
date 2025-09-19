@@ -42,10 +42,11 @@ function App() {
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
+  const [cooldownEndTime, setCooldownEndTime] = useState<number | null>(null);
+  const [timeRemaining, setTimeRemaining] = useState<string>('');
 
   const roles = [
     'Full Stack Developer',
-    'Desarrollador SAP',
     'SAP Developer'
   ];
 
@@ -105,7 +106,6 @@ function App() {
       setCursorPosition({ x: e.clientX, y: e.clientY });
       
       // Update cursor position
-      const cursor = document.querySelector('body::before') as HTMLElement;
       document.documentElement.style.setProperty('--cursor-x', `${e.clientX}px`);
       document.documentElement.style.setProperty('--cursor-y', `${e.clientY}px`);
     };
@@ -136,6 +136,31 @@ function App() {
       });
     };
   }, []);
+
+  // Cooldown timer effect
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    
+    if (cooldownEndTime) {
+      interval = setInterval(() => {
+        const now = Date.now();
+        const remaining = cooldownEndTime - now;
+        
+        if (remaining <= 0) {
+          setCooldownEndTime(null);
+          setTimeRemaining('');
+        } else {
+          const minutes = Math.floor(remaining / (1000 * 60));
+          const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
+          setTimeRemaining(`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
+        }
+      }, 1000);
+    }
+    
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [cooldownEndTime]);
 
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
@@ -177,6 +202,11 @@ function App() {
       console.log('Email enviado exitosamente:', response.status, response.text);
       setSubmitStatus('success');
       setFormData({ name: '', email: '', subject: '', message: '' });
+      
+      // Set cooldown timer (1 hour = 3600000 milliseconds)
+      const cooldownEnd = Date.now() + 3600000;
+      setCooldownEndTime(cooldownEnd);
+      localStorage.setItem('formCooldownEnd', cooldownEnd.toString());
     })
     .catch((error) => {
       console.error('Error al enviar email:', error);
@@ -188,6 +218,19 @@ function App() {
       setTimeout(() => setSubmitStatus('idle'), 5000);
     });
   };
+
+  // Check for existing cooldown on component mount
+  useEffect(() => {
+    const savedCooldownEnd = localStorage.getItem('formCooldownEnd');
+    if (savedCooldownEnd) {
+      const cooldownEnd = parseInt(savedCooldownEnd);
+      if (cooldownEnd > Date.now()) {
+        setCooldownEndTime(cooldownEnd);
+      } else {
+        localStorage.removeItem('formCooldownEnd');
+      }
+    }
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({
@@ -641,108 +684,133 @@ function App() {
                 </div>
               </div>
               
-              <form onSubmit={handleFormSubmit} className="lg:col-span-3 space-y-6">
-                <div className="bg-gradient-to-br from-white to-red-50/30 dark:from-gray-800 dark:to-red-950/20 p-8 rounded-3xl shadow-xl border border-red-100/30 dark:border-red-900/30 backdrop-blur-sm space-y-6">
-                  
-                  {/* Status Messages */}
-                  {submitStatus === 'success' && (
-                    <div className="p-4 bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700 rounded-2xl">
-                      <p className="text-green-800 dark:text-green-200 font-medium text-center">
-                        ¡Mensaje enviado exitosamente! Te responderé pronto.
-                      </p>
+              <div className="lg:col-span-3 space-y-6 relative">
+                {/* Cooldown Overlay */}
+                {cooldownEndTime && (
+                  <div className="absolute inset-0 z-10 flex items-center justify-center">
+                    <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm p-8 rounded-3xl shadow-2xl border-2 border-red-500/50 text-center max-w-md">
+                      <div className="mb-4">
+                        <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                          ¡Mensaje Enviado!
+                        </h3>
+                        <p className="text-gray-600 dark:text-gray-300 mb-4">
+                          El mensaje se ha enviado correctamente.
+                        </p>
+                        <p className="text-gray-700 dark:text-gray-200 font-medium">
+                          Por favor, espere{' '}
+                          <span className="font-mono text-red-600 dark:text-red-400 text-lg">
+                            {timeRemaining}
+                          </span>
+                          {' '}antes de enviar otro.
+                        </p>
+                      </div>
                     </div>
-                  )}
+                  </div>
+                )}
+                
+                <form 
+                  onSubmit={handleFormSubmit} 
+                  className={`transition-all duration-300 ${cooldownEndTime ? 'blur-sm pointer-events-none' : ''}`}
+                >
+                  <div className="bg-gradient-to-br from-white to-red-50/30 dark:from-gray-800 dark:to-red-950/20 p-8 rounded-3xl shadow-xl border border-red-100/30 dark:border-red-900/30 backdrop-blur-sm space-y-6">
                   
-                  {submitStatus === 'error' && (
-                    <div className="p-4 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded-2xl">
-                      <p className="text-red-800 dark:text-red-200 font-medium text-center">
-                        Error al enviar el mensaje. Por favor, intenta nuevamente.
-                      </p>
-                    </div>
-                  )}
+                    {/* Status Messages */}
+                    {submitStatus === 'error' && (
+                      <div className="p-4 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded-2xl">
+                        <p className="text-red-800 dark:text-red-200 font-medium text-center">
+                          Error al enviar el mensaje. Por favor, intenta nuevamente.
+                        </p>
+                      </div>
+                    )}
 
-                  <div>
-                    <label htmlFor="name" className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">
-                      Nombre
-                    </label>
-                    <input
-                      type="text"
-                      id="name"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-6 py-4 border-2 border-red-200/50 dark:border-red-800/50 rounded-2xl focus:ring-4 focus:ring-red-500/20 focus:border-red-500 transition-all duration-300 bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-white backdrop-blur-sm"
-                      placeholder="Tu nombre"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="email" className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">
-                      Email
-                    </label>
-                    <input
-                      type="email"
-                      id="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-6 py-4 border-2 border-red-200/50 dark:border-red-800/50 rounded-2xl focus:ring-4 focus:ring-red-500/20 focus:border-red-500 transition-all duration-300 bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-white backdrop-blur-sm"
-                      placeholder="tu@email.com"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="subject" className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">
-                      Asunto
-                    </label>
-                    <select
-                      id="subject"
-                      name="subject"
-                      value={formData.subject}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-6 py-4 border-2 border-red-200/50 dark:border-red-800/50 rounded-2xl focus:ring-4 focus:ring-red-500/20 focus:border-red-500 transition-all duration-300 bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-white backdrop-blur-sm"
+                    <div>
+                      <label htmlFor="name" className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">
+                        Nombre
+                      </label>
+                      <input
+                        type="text"
+                        id="name"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-6 py-4 border-2 border-red-200/50 dark:border-red-800/50 rounded-2xl focus:ring-4 focus:ring-red-500/20 focus:border-red-500 transition-all duration-300 bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-white backdrop-blur-sm"
+                        placeholder="Tu nombre"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label htmlFor="email" className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">
+                        Email
+                      </label>
+                      <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-6 py-4 border-2 border-red-200/50 dark:border-red-800/50 rounded-2xl focus:ring-4 focus:ring-red-500/20 focus:border-red-500 transition-all duration-300 bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-white backdrop-blur-sm"
+                        placeholder="tu@email.com"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label htmlFor="subject" className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">
+                        Asunto
+                      </label>
+                      <select
+                        id="subject"
+                        name="subject"
+                        value={formData.subject}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-6 py-4 border-2 border-red-200/50 dark:border-red-800/50 rounded-2xl focus:ring-4 focus:ring-red-500/20 focus:border-red-500 transition-all duration-300 bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-white backdrop-blur-sm"
+                      >
+                        <option value="">Selecciona un asunto</option>
+                        <option value="Oportunidad Laboral">Oportunidad Laboral</option>
+                        <option value="Proyecto Freelance">Proyecto Freelance</option>
+                        <option value="Colaboración">Colaboración</option>
+                        <option value="Otro">Otro</option>
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label htmlFor="message" className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">
+                        Mensaje
+                      </label>
+                      <textarea
+                        id="message"
+                        name="message"
+                        value={formData.message}
+                        onChange={handleInputChange}
+                        required
+                        rows={5}
+                        className="w-full px-6 py-4 border-2 border-red-200/50 dark:border-red-800/50 rounded-2xl focus:ring-4 focus:ring-red-500/20 focus:border-red-500 transition-all duration-300 resize-none bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-white backdrop-blur-sm"
+                        placeholder="Tu mensaje"
+                      />
+                    </div>
+                    
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className={`w-full px-10 py-4 font-semibold rounded-2xl transition-all duration-300 flex items-center justify-center gap-3 border ${
+                        isSubmitting 
+                          ? 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed' 
+                          : 'bg-gradient-to-r from-red-600 via-red-500 to-orange-500 hover:shadow-2xl hover:shadow-red-500/25 transform hover:-translate-y-1 hover:scale-105 border-red-400/20'
+                      } text-white`}
                     >
-                      <option value="">Selecciona un asunto</option>
-                      <option value="Oportunidad Laboral">Oportunidad Laboral</option>
-                      <option value="Proyecto Freelance">Proyecto Freelance</option>
-                      <option value="Colaboración">Colaboración</option>
-                      <option value="Otro">Otro</option>
-                    </select>
+                      <Send size={20} />
+                      {isSubmitting ? 'Enviando...' : 'Enviar mensaje'}
+                    </button>
                   </div>
-                  
-                  <div>
-                    <label htmlFor="message" className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">
-                      Mensaje
-                    </label>
-                    <textarea
-                      id="message"
-                      name="message"
-                      value={formData.message}
-                      onChange={handleInputChange}
-                      required
-                      rows={5}
-                      className="w-full px-6 py-4 border-2 border-red-200/50 dark:border-red-800/50 rounded-2xl focus:ring-4 focus:ring-red-500/20 focus:border-red-500 transition-all duration-300 resize-none bg-white/80 dark:bg-gray-700/80 text-gray-900 dark:text-white backdrop-blur-sm"
-                      placeholder="Tu mensaje"
-                    />
-                  </div>
-                  
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className={`w-full px-10 py-4 font-semibold rounded-2xl transition-all duration-300 flex items-center justify-center gap-3 border ${
-                      isSubmitting 
-                        ? 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed' 
-                        : 'bg-gradient-to-r from-red-600 via-red-500 to-orange-500 hover:shadow-2xl hover:shadow-red-500/25 transform hover:-translate-y-1 hover:scale-105 border-red-400/20'
-                    } text-white`}
-                  >
-                    <Send size={20} />
-                    {isSubmitting ? 'Enviando...' : 'Enviar mensaje'}
-                  </button>
-                </div>
-              </form>
+                </form>
+              </div>
             </div>
           </div>
         </section>

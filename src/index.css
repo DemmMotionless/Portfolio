@@ -24,7 +24,7 @@ body::before {
   pointer-events: none;
   z-index: 9999;
   transform: translate(-50%, -50%);
-  transition: all 0.1s ease;
+  transition: all 0.05s ease;
   box-shadow: 
     0 0 20px rgba(220, 38, 38, 0.6),
     0 0 40px rgba(220, 38, 38, 0.3),
