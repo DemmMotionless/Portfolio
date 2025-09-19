@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import emailjs from '@emailjs/browser';
+import { EMAILJS_CONFIG } from './emailjs-config';
 import AnimatedBackground from './components/AnimatedBackground';
 import { 
   Github, 
@@ -36,6 +38,8 @@ function App() {
     subject: '',
     message: ''
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [showScrollTop, setShowScrollTop] = useState(false);
 
   const roles = [
@@ -112,8 +116,38 @@ function App() {
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
-    setFormData({ name: '', email: '', subject: '', message: '' });
+    setIsSubmitting(true);
+    setSubmitStatus('idle');
+
+    // Preparar los datos para EmailJS
+    const templateParams = {
+      from_name: formData.name,
+      from_email: formData.email,
+      subject: formData.subject,
+      message: formData.message,
+      to_name: 'Nahuel Neira', // Tu nombre
+    };
+
+    emailjs.send(
+      EMAILJS_CONFIG.SERVICE_ID,
+      EMAILJS_CONFIG.TEMPLATE_ID,
+      templateParams,
+      EMAILJS_CONFIG.PUBLIC_KEY
+    )
+    .then((response) => {
+      console.log('Email enviado exitosamente:', response.status, response.text);
+      setSubmitStatus('success');
+      setFormData({ name: '', email: '', subject: '', message: '' });
+    })
+    .catch((error) => {
+      console.error('Error al enviar email:', error);
+      setSubmitStatus('error');
+    })
+    .finally(() => {
+      setIsSubmitting(false);
+      // Reset status after 5 seconds
+      setTimeout(() => setSubmitStatus('idle'), 5000);
+    });
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -511,7 +545,7 @@ function App() {
 
         {/* Contact Section */}
         <section id="contact" className="py-20 relative z-10">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
               <h2 className="text-5xl font-black text-gray-900 dark:text-white mb-6 transition-colors duration-300 tracking-tight">Contactemos</h2>
               <div className="w-24 h-1.5 bg-gradient-to-r from-red-600 via-red-500 to-orange-500 mx-auto rounded-full shadow-lg"></div>
@@ -520,8 +554,8 @@ function App() {
               </p>
             </div>
             
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-              <div className="space-y-8">
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-12">
+              <div className="lg:col-span-2 space-y-8">
                 <div className="flex items-center group">
                   <div className="p-4 bg-gradient-to-br from-red-100 to-orange-100 dark:from-red-950/50 dark:to-orange-950/50 rounded-2xl mr-6 group-hover:scale-110 transition-transform duration-300">
                     <Mail className="w-6 h-6 text-red-600 dark:text-red-400" />
@@ -568,8 +602,26 @@ function App() {
                 </div>
               </div>
               
-              <form onSubmit={handleFormSubmit} className="space-y-6">
+              <form onSubmit={handleFormSubmit} className="lg:col-span-3 space-y-6">
                 <div className="bg-gradient-to-br from-white to-red-50/30 dark:from-gray-800 dark:to-red-950/20 p-8 rounded-3xl shadow-xl border border-red-100/30 dark:border-red-900/30 backdrop-blur-sm space-y-6">
+                  
+                  {/* Status Messages */}
+                  {submitStatus === 'success' && (
+                    <div className="p-4 bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700 rounded-2xl">
+                      <p className="text-green-800 dark:text-green-200 font-medium text-center">
+                        ¡Mensaje enviado exitosamente! Te responderé pronto.
+                      </p>
+                    </div>
+                  )}
+                  
+                  {submitStatus === 'error' && (
+                    <div className="p-4 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded-2xl">
+                      <p className="text-red-800 dark:text-red-200 font-medium text-center">
+                        Error al enviar el mensaje. Por favor, intenta nuevamente.
+                      </p>
+                    </div>
+                  )}
+
                   <div>
                     <label htmlFor="name" className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-3">
                       Nombre
@@ -640,10 +692,15 @@ function App() {
                   
                   <button
                     type="submit"
-                    className="w-full px-10 py-4 bg-gradient-to-r from-red-600 via-red-500 to-orange-500 text-white font-semibold rounded-2xl hover:shadow-2xl hover:shadow-red-500/25 transform hover:-translate-y-1 hover:scale-105 transition-all duration-300 flex items-center justify-center gap-3 border border-red-400/20"
+                    disabled={isSubmitting}
+                    className={`w-full px-10 py-4 font-semibold rounded-2xl transition-all duration-300 flex items-center justify-center gap-3 border ${
+                      isSubmitting 
+                        ? 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed' 
+                        : 'bg-gradient-to-r from-red-600 via-red-500 to-orange-500 hover:shadow-2xl hover:shadow-red-500/25 transform hover:-translate-y-1 hover:scale-105 border-red-400/20'
+                    } text-white`}
                   >
                     <Send size={20} />
-                    Enviar mensaje
+                    {isSubmitting ? 'Enviando...' : 'Enviar mensaje'}
                   </button>
                 </div>
               </form>
