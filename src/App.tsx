@@ -29,8 +29,7 @@ function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('home');
   const [typedText, setTypedText] = useState('');
-  const [isTyping, setIsTyping] = useState(true);
-  const [currentRoleIndex, setCurrentRoleIndex] = useState(0);
+  const [isTypingComplete, setIsTypingComplete] = useState(false);
   const [theme, setTheme] = useState<Theme>('dark');
   const [formData, setFormData] = useState({
     name: '',
@@ -41,39 +40,23 @@ function App() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [showScrollTop, setShowScrollTop] = useState(false);
-  const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
   const [cooldownEndTime, setCooldownEndTime] = useState<number | null>(null);
   const [timeRemaining, setTimeRemaining] = useState<string>('');
 
-  const roles = [
-    'Full Stack Developer',
-    'SAP Developer'
-  ];
-
-  const currentRole = roles[currentRoleIndex];
+  const role = 'SAP Developer';
 
   useEffect(() => {
-    if (isTyping && typedText.length < currentRole.length) {
+    if (!isTypingComplete && typedText.length < role.length) {
       const timeout = setTimeout(() => {
-        setTypedText(currentRole.slice(0, typedText.length + 1));
+        setTypedText(role.slice(0, typedText.length + 1));
       }, 100);
       return () => clearTimeout(timeout);
-    } else if (isTyping && typedText.length === currentRole.length) {
+    } else if (!isTypingComplete && typedText.length === role.length) {
       setTimeout(() => {
-        setIsTyping(false);
+        setIsTypingComplete(true);
       }, 2000);
-    } else if (!isTyping) {
-      if (typedText.length > 0) {
-        const timeout = setTimeout(() => {
-          setTypedText(typedText.slice(0, -1));
-        }, 50);
-        return () => clearTimeout(timeout);
-      } else {
-        setCurrentRoleIndex((prev) => (prev + 1) % roles.length);
-        setIsTyping(true);
-      }
     }
-  }, [typedText, isTyping, currentRole]);
+  }, [typedText, isTypingComplete, role]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -99,43 +82,6 @@ function App() {
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
   }, [theme]);
-
-  // Custom cursor effect
-  useEffect(() => {
-    const updateCursor = (e: MouseEvent) => {
-      setCursorPosition({ x: e.clientX, y: e.clientY });
-      
-      // Update cursor position
-      document.documentElement.style.setProperty('--cursor-x', `${e.clientX}px`);
-      document.documentElement.style.setProperty('--cursor-y', `${e.clientY}px`);
-    };
-
-    const handleMouseEnter = () => {
-      document.body.classList.add('cursor-hover');
-    };
-
-    const handleMouseLeave = () => {
-      document.body.classList.remove('cursor-hover');
-    };
-
-    // Add cursor tracking
-    document.addEventListener('mousemove', updateCursor);
-    
-    // Add hover effects for interactive elements
-    const interactiveElements = document.querySelectorAll('a, button, input, textarea, select, [role="button"]');
-    interactiveElements.forEach(el => {
-      el.addEventListener('mouseenter', handleMouseEnter);
-      el.addEventListener('mouseleave', handleMouseLeave);
-    });
-
-    return () => {
-      document.removeEventListener('mousemove', updateCursor);
-      interactiveElements.forEach(el => {
-        el.removeEventListener('mouseenter', handleMouseEnter);
-        el.removeEventListener('mouseleave', handleMouseLeave);
-      });
-    };
-  }, []);
 
   // Cooldown timer effect
   useEffect(() => {
@@ -242,7 +188,7 @@ function App() {
   const projects = [
     {
       title: 'Página Web Responsiva',
-      description: 'Proyectos prácticos de páginas web responsive, optimizando la experiencia del usuario en diferentes dispositivos',
+      description: 'Proyecto práctico de página web responsive, optimizando la experiencia del usuario en diferentes dispositivos',
       image: "/Pagina1.jpg",
       technologies: ["HTML", "CSS", "Responsive Design"],
       github: "https://github.com/DemmMotionless/PaginaWeb.git"
@@ -269,7 +215,7 @@ function App() {
       company: 'ARTECH - Fundación Pescar',
       period: 'Julio 2025 - Diciembre 2025',
       status: 'Julio 2025 - En curso',
-      description: 'Programa intensivo de formación para la inserción laboral en IT, con contenidos técnicos y habilidades interpersonales.',
+      description: 'Programa intensivo de formación para la inserción laboral en IT, con contenidos técnicos (237 hs) y habilidades interpersonales (180 hs).',
       subjects: ['SQL', 'ABAP', 'SAP Fiori', 'SAP BTP', 'JavaScript', 'Python', 'Power BI', 'Databricks', 'PowerApps']
     },
     {
@@ -404,11 +350,11 @@ function App() {
             </h1>
             
             <div className="text-3xl md:text-4xl font-semibold text-gray-700 dark:text-gray-200 mb-8 h-16 transition-colors duration-300">
-              {typedText}<span className="animate-pulse text-red-500">|</span>
+              {typedText}{!isTypingComplete && <span className="animate-pulse text-red-500">|</span>}
             </div>
             
             <p className="text-xl text-gray-600 dark:text-gray-300 mb-12 max-w-3xl mx-auto transition-colors duration-300 leading-relaxed">
-              Soy un desarrollador web full stack con conocimientos en Python, C#, SQL y experiencia en desarrollo backend y frontend. Actualmente en capacitación en desarrollo SAP e IA.
+              Formación en SAP con conocimientos en SAP Fiori, ABAP y SQL.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -448,7 +394,7 @@ function App() {
                 <div className="bg-gradient-to-br from-white to-red-50/30 dark:from-gray-800/90 dark:to-red-950/30 p-8 rounded-3xl shadow-xl border border-red-100/30 dark:border-red-900/30 backdrop-blur-sm">
                   <h3 className="text-xl font-bold text-red-600 dark:text-red-400 mb-4">Sobre Mí</h3>
                   <p className="text-lg text-gray-700 dark:text-gray-200 leading-relaxed transition-colors duration-300">
-                    Soy un desarrollador web full stack con conocimientos en Python, C#, SQL y experiencia en desarrollo backend y frontend. Actualmente en capacitación en desarrollo SAP e IA. Busco mi primera experiencia en el sector IT, destacando por mi capacidad para resolver problemas y trabajar en equipo, siempre con el deseo de aprender y adaptarme a nuevas tecnologías.
+                    Actualmente soy estudiante de la carrera de Programación (Tecnicatura Universitaria en Programación) en la Universidad Nacional de Hurlingham. Soy una persona entusiasta, responsable y atenta, con altas expectativas en lo que conlleva aprender y ejercer cualquier tipo de trabajo. Intento superarme en todos los aspectos de mi vida, dando lo mejor de mi todos los días, tanto en el aspecto laboral como en el personal.
                   </p>
                 </div>
                 
@@ -592,7 +538,7 @@ function App() {
                     </div>
                     
                     <div className="border-t border-red-100/50 dark:border-red-900/50 pt-6">
-                      <h5 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Materias destacadas:</h5>
+                      <h5 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Herramientas destacadas:</h5>
                       <div className="flex flex-wrap gap-3">
                         {exp.subjects.map((subject, subjectIndex) => (
                           <span
