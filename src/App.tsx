@@ -403,15 +403,19 @@ function App() {
                   <div className="grid grid-cols-1 gap-3 text-gray-700 dark:text-gray-300">
                     <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-orange-100/50 dark:hover:bg-orange-900/20 transition-colors">
                       <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
-                      <span className="text-sm font-medium">🚀 Desarrollo Full Stack</span>
+                      <span className="text-sm font-medium">🤝 Trabajo en equipo</span>
                     </div>
                     <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-orange-100/50 dark:hover:bg-orange-900/20 transition-colors">
                       <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
-                      <span className="text-sm font-medium">📊 Análisis de Datos</span>
+                      <span className="text-sm font-medium">💻 HTML, CSS y JavaScript</span>
                     </div>
                     <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-orange-100/50 dark:hover:bg-orange-900/20 transition-colors">
                       <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
-                      <span className="text-sm font-medium">🔧 Desarrollador SAP</span>
+                      <span className="text-sm font-medium">🗄️ SQL</span>
+                    </div>
+                    <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-orange-100/50 dark:hover:bg-orange-900/20 transition-colors">
+                      <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
+                      <span className="text-sm font-medium">🔧 Desarrollador SAP, SAP Fiori, ABAP</span>
                     </div>
                     <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-orange-100/50 dark:hover:bg-orange-900/20 transition-colors">
                       <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
